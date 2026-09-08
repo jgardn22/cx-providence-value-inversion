@@ -536,7 +536,7 @@ PANEL_PROBLEM = """
   <div class="card">
     <div class="card-header">
       <h3>The compounding cost</h3>
-      <p>A single vendor's &ldquo;AI upgrade&rdquo; can cost more than the platform itself.</p>
+      <p>A single vendor's &ldquo;AI upgrade&rdquo; isn't one cost. It's a license increase, a new system to build, and a bill that never stops.</p>
     </div>
     <div class="stat-grid">
       <div class="stat-card"><div class="stat-num">24&ndash;26%</div><p>Typical license cost increase to bolt on a separate data + AI layer</p></div>
