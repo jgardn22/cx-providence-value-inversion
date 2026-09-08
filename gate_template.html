@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>{{RESOURCE_TITLE}} · Protected</title>
+<meta name="robots" content="noindex,nofollow" />
+<style>
+  body { margin:0; font-family:"Segoe UI",system-ui,sans-serif;
+    background: linear-gradient(135deg, #0D1C3D 0%, #1a2f5c 100%); color:#fff;
+    display:flex; align-items:center; justify-content:center; min-height:100vh; }
+  .gate { background:#fff; color:#1a1a1a; border-radius:14px; padding:36px 32px;
+    max-width:440px; width:90%; box-shadow:0 20px 60px rgba(0,0,0,0.3); text-align:center; }
+  .gate .eyebrow { font-size:12px; font-weight:600; color:#0D1C3D;
+    letter-spacing:0.08em; text-transform:uppercase; margin-bottom:8px; }
+  .gate h1 { font-size:22px; margin:0 0 8px; color:#0D1C3D; }
+  .gate p { color:#6b7280; font-size:14px; margin:0 0 20px; }
+  .gate input { width:100%; padding:12px 14px; border:1px solid #e5e7eb;
+    border-radius:8px; font-size:16px; letter-spacing:0.04em; text-align:center;
+    font-family: inherit; }
+  .gate input.shake { animation: shake 0.4s; border-color:#dc2626; }
+  @keyframes shake { 0%,100%{transform:translateX(0);} 25%{transform:translateX(-6px);}
+    75%{transform:translateX(6px);} }
+  .gate button { margin-top:14px; width:100%; padding:12px; border:0; border-radius:8px;
+    background:#0D1C3D; color:#fff; font-size:15px; font-weight:600; cursor:pointer; }
+  .gate button:hover { background:#F6B350; color:#0D1C3D; }
+  .gate .err { color:#dc2626; font-size:13px; margin-top:10px; min-height:18px; }
+  .gate .footnote { margin-top:18px; font-size:11px; color:#94a3b8; line-height:1.5; }
+</style>
+</head>
+<body>
+<div class="gate" id="gate">
+  <div class="eyebrow">Protected customer artifact</div>
+  <h1>{{RESOURCE_TITLE}}</h1>
+  <p>Enter the access code to open the encrypted self-contained visual.</p>
+  <input id="code" type="password" placeholder="Access code" autofocus autocomplete="off" />
+  <button id="go">Unlock</button>
+  <div class="err" id="err"></div>
+  <div class="footnote">This local HTML uses access-code encryption for sharing convenience.
+    For highly sensitive content, use named-recipient sharing through OneDrive or SharePoint
+    as the authoritative protection layer.</div>
+</div>
+<script>
+const CIPHERTEXT = "{{CIPHERTEXT_BASE64}}";
+const SALT       = "{{SALT_BASE64}}";
+const IV         = "{{IV_BASE64}}";
+const ITER       = 250000;
+
+function b64(s){return Uint8Array.from(atob(s),c=>c.charCodeAt(0));}
+async function deriveKey(pw){
+  const enc=new TextEncoder();
+  const km=await crypto.subtle.importKey("raw",enc.encode(pw),"PBKDF2",false,["deriveKey"]);
+  return crypto.subtle.deriveKey({name:"PBKDF2",salt:b64(SALT),iterations:ITER,hash:"SHA-256"},
+    km,{name:"AES-GCM",length:256},false,["decrypt"]);
+}
+async function unlock(){
+  const pw=document.getElementById("code").value.trim();
+  const err=document.getElementById("err");
+  const inp=document.getElementById("code");
+  err.textContent="";
+  try{
+    const key=await deriveKey(pw);
+    const plain=await crypto.subtle.decrypt({name:"AES-GCM",iv:b64(IV)},key,b64(CIPHERTEXT));
+    const html=new TextDecoder().decode(plain);
+    document.open(); document.write(html); document.close();
+  } catch(e){
+    inp.classList.remove("shake"); void inp.offsetWidth; inp.classList.add("shake");
+    err.textContent="Incorrect access code";
+  }
+}
+document.getElementById("go").onclick=unlock;
+document.getElementById("code").addEventListener("keydown",e=>{if(e.key==="Enter")unlock();});
+</script>
+</body>
+</html>
